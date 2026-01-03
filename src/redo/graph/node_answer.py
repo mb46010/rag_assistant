@@ -2,7 +2,7 @@ import logging
 from typing import Any, Dict, List, Literal
 
 from langchain_core.messages import SystemMessage
-from langfuse.decorators import observe
+from langfuse import observe
 from pydantic import BaseModel, Field
 
 from redo.graph.state import GraphState

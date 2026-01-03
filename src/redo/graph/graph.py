@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 def make_graph(llm):
-    retry_policy = RetryPolicy(max_retries=3)
+    retry_policy = RetryPolicy(max_attempts=3)
 
     graph_builder = StateGraph(GraphState)
     graph_builder.add_node("intent", factory_intent_node(llm), retry_policy=retry_policy)
@@ -22,7 +22,7 @@ def make_graph(llm):
     graph_builder.add_node("answer", factory_answer_node(llm), retry_policy=retry_policy)
 
     graph_builder.add_edge(START, "intent")
-    graph_builder.add_conditional_edge("intent", on_intent_edge)
+    graph_builder.add_conditional_edges("intent", on_intent_edge)
     graph_builder.add_edge("query_hr", "answer")
     graph_builder.add_edge("query_rag", "answer")
 

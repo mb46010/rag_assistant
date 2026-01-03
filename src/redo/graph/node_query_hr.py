@@ -2,7 +2,7 @@ import logging
 from typing import Any, Dict
 
 from langchain_core.messages import SystemMessage
-from langfuse.decorators import observe
+from langfuse import observe
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
 
