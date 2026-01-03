@@ -2,6 +2,7 @@ import logging
 from typing import Any, Dict, List
 
 from langchain_core.messages import SystemMessage
+from langfuse.decorators import observe
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
 
@@ -34,6 +35,7 @@ async def mock_return_documents(query: str) -> Dict[str, Any]:
     return hr_policies
 
 
+@observe()
 async def create_rag_query_node(state: GraphState) -> RagResponse:
     rag_response = await mock_return_documents(state["messages"][-1].content)
     return {"rag_response": rag_response}

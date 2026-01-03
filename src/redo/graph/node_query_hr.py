@@ -2,6 +2,7 @@ import logging
 from typing import Any, Dict
 
 from langchain_core.messages import SystemMessage
+from langfuse.decorators import observe
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
 
@@ -19,6 +20,7 @@ async def mock_return_holidays(user_email: str) -> Dict[str, Any]:
     return {"holiday_balance": 10}
 
 
+@observe()
 async def create_hr_query_node(state: GraphState) -> HRSystemResponse:
     user_email = state["user_email"]
     hr_system_response = await mock_return_holidays(user_email)

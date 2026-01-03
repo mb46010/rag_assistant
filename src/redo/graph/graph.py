@@ -1,6 +1,6 @@
 import logging
 
-from langchain.graph import END, START, StateGraph
+from langgraph.graph import END, START, StateGraph
 from langgraph.types import RetryPolicy
 
 from redo.graph.node_answer import factory_answer_node
@@ -31,15 +31,16 @@ def make_graph(llm):
     return graph
 
 
-def on_intent_edge(state: GraphState) -> str:
-    logger.info("Intent Edge: %s", state.intent)
+def on_intent_edge(state: GraphState) -> list[str]:
+    intent = state.get("intent")
+    logger.info("Intent Edge: %s", intent)
     responses = {
         "hr_system_query": ["query_hr"],
         "rag_query": ["query_rag"],
         "hr_rag_query": ["query_hr", "query_rag"],
+        "out_of_scope": ["answer"],
     }
-    intent = state["intent"]
-    parallel_nodes = responses.get(intent, [])
+    parallel_nodes = responses.get(intent)
     if not parallel_nodes:
-        raise ValueError(f"Invalid intent: {intent}")
+        raise ValueError(f"Invalid or missing intent: {intent}")
     return parallel_nodes

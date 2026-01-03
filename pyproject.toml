@@ -1,7 +1,7 @@
 [project]
 name = "redo"
 version = "0.1.0"
-description = "AI Onboarding Demo"
+description = "AI Rag Assistant DEMO"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [

@@ -1,6 +1,6 @@
 from typing import Any, Dict, Literal, Optional
 
-from langchain.graph import StateGraph
+from langgraph.graph import StateGraph
 
 # from langchain.messages import Message
 from langgraph.graph.message import add_messages
