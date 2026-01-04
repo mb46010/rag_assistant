@@ -1,41 +1,57 @@
 import logging
 from typing import Any, Dict, List
 
-from langchain_core.messages import SystemMessage
+from langchain_core.messages import HumanMessage, SystemMessage
 from langfuse import observe
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
 
 from redo.graph.state import GraphState
+from redo.prompts.rag import CONDENSE_QUESTION_PROMPT
+from redo.rag.retrieve import retrieve_policies
 
-hr_policies = [
-    {
-        "title": "Remote Work Policy",
-        "content": "Employees may work remotely up to 3 days per week with manager approval. Full-time remote work requires VP approval. Equipment stipend: CHF 500/year.",
-    },
-    {
-        "title": "Vacation Policy",
-        "content": "Employees receive 25 days annual vacation. Vacation must be requested 2 weeks in advance. Unused vacation expires December 31st.",
-    },
-    {
-        "title": "Parental Leave",
-        "content": "Primary caregivers: 16 weeks paid leave. Secondary caregivers: 4 weeks paid leave. Must notify HR 3 months before expected date.",
-    },
-]
+logger = logging.getLogger(__name__)
 
 
 class RagResponse(TypedDict):
     retrieved_documents: List[Dict[str, Any]]
 
 
-logger = logging.getLogger(__name__)
+class StandaloneQuestion(BaseModel):
+    """The standalone question for the RAG system."""
+
+    question: str = Field(..., description="The standalone question")
 
 
-async def mock_return_documents(query: str) -> Dict[str, Any]:
-    return hr_policies
+def factory_rag_query_node(llm):
+    @observe()
+    async def create_rag_query_node(state: GraphState) -> RagResponse:
+        logger.info("RAG Query Node started")
 
+        # 1. Condense the question
+        last_message = state["messages"][-1]
+        chat_history = state["messages"][:-1]
 
-@observe()
-async def create_rag_query_node(state: GraphState) -> RagResponse:
-    rag_response = await mock_return_documents(state["messages"][-1].content)
-    return {"rag_response": rag_response}
+        filled_prompt = CONDENSE_QUESTION_PROMPT.format(chat_history=chat_history, question=last_message.content)
+
+        model = llm.with_structured_output(StandaloneQuestion)
+        try:
+            response = model.invoke([SystemMessage(content=filled_prompt)])
+            query = response.question
+            logger.info(f"Generated standalone question: {query}")
+        except Exception as e:
+            logger.error(f"Error generating standalone question: {e}")
+            # Fallback to original message if summarization fails
+            query = last_message.content
+
+        # 2. Retrieve documents
+        nodes = retrieve_policies(query)
+
+        # 3. Format results
+        retrieved_documents = []
+        for node in nodes:
+            retrieved_documents.append({"content": node.get_content(), "score": node.score, "metadata": node.metadata})
+
+        return {"rag_response": retrieved_documents}
+
+    return create_rag_query_node

@@ -6,7 +6,7 @@ from langgraph.types import RetryPolicy
 from redo.graph.node_answer import factory_answer_node
 from redo.graph.node_intent import factory_intent_node
 from redo.graph.node_query_hr import create_hr_query_node
-from redo.graph.node_query_rag import create_rag_query_node
+from redo.graph.node_query_rag import factory_rag_query_node
 from redo.graph.state import GraphState
 
 logger = logging.getLogger(__name__)
@@ -18,7 +18,7 @@ def make_graph(llm):
     graph_builder = StateGraph(GraphState)
     graph_builder.add_node("intent", factory_intent_node(llm), retry_policy=retry_policy)
     graph_builder.add_node("query_hr", create_hr_query_node, retry_policy=retry_policy)
-    graph_builder.add_node("query_rag", create_rag_query_node, retry_policy=retry_policy)
+    graph_builder.add_node("query_rag", factory_rag_query_node(llm), retry_policy=retry_policy)
     graph_builder.add_node("answer", factory_answer_node(llm), retry_policy=retry_policy)
 
     graph_builder.add_edge(START, "intent")
